@@ -2,7 +2,7 @@
 const request = require('request');
 const Globals = require("./globals/globals");
 
-const PAGE_ACCESS_TOKEN = Globals.PAGE_ACCESS_TOKEN
+const PAGE_ACCESS_TOKEN = Globals.PAGE_ACCESS_TOKEN;
 
 // Imports dependencies and set up http server
 const
