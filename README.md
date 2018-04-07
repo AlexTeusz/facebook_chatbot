@@ -8,11 +8,15 @@ The **PAGE ACCESS TOKEN** and **VERIFY TOKEN**, which are both important for the
 
 ```
 var globalConfig = {
-    PAGE_ACCESS_TOKEN: "xxx",
-    VERIFY_TOKEN: "xxx",
-}
-
-module.exports = globalConfig
+    PAGE_ACCESS_TOKEN: "",
+    VERIFY_TOKEN: "",
+    MAIL: "",
+    MAIL_PASS: "",
+    MAIL_TO: "",
+    PORT: 465,
+    SECURE: true,
+    HOST: "smtp.example.com"
+};
 ```
 
 **Main Functionality** <br>
