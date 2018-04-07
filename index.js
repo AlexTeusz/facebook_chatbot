@@ -1,14 +1,22 @@
 'use strict';
 const request = require('request');
-const Globals = require("./globals/globals");
-
+const nodemailer = require('nodemailer');
+const Globals = require('./globals');
+const
+    express = require('express'),
+    bodyParser = require('body-parser'),
+    app = express().use(bodyParser.json()); // creates express http server
 const PAGE_ACCESS_TOKEN = Globals.PAGE_ACCESS_TOKEN;
 
-// Imports dependencies and set up http server
-const
-  express = require('express'),
-  bodyParser = require('body-parser'),
-  app = express().use(bodyParser.json()); // creates express http server
+let transporter = nodemailer.createTransport({
+    host: Globals.HOST,
+    port: Globals.PORT,
+    secure: Globals.SECURE, // true for 465, false for other ports
+    auth: {
+        user: Globals.MAIL, // generated ethereal user
+        pass: Globals.MAIL_PASS // generated ethereal password
+    }
+});
 
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 1337, () => console.log('webhook is listening'));
@@ -88,7 +96,6 @@ function handleMessage(sender_psid, received_message) {
 
     request('https://graph.facebook.com/v2.6/'+sender_psid+'?fields=first_name,last_name&access_token='+PAGE_ACCESS_TOKEN, { json: true }, (err, res, body) => {
         if (err) { return console.log(err); }
-        console.log(body);
 
         var name;
         if (body !== undefined){
@@ -98,9 +105,6 @@ function handleMessage(sender_psid, received_message) {
         }
 
         if (received_message.text) {
-            // Create the payload for a basic text message, which
-            // will be added to the body of our request to the Send API
-            // ${received_message.text}
 
             if (received_message.text.toLowerCase() === "bot start"){
                 botStatus = true;
@@ -112,6 +116,9 @@ function handleMessage(sender_psid, received_message) {
                         botStatus = false;
                         break;
                     case "ciao":
+                    case "nein":
+                    case "no":
+                    case "ne":
                     case "tschüss":
                     case "auf wiedersehen":
                     case "bis dann":
@@ -125,140 +132,17 @@ function handleMessage(sender_psid, received_message) {
                     case "merchandise":
                     case "merch":
                     case "fanartikel":
-                        response = {
-                            "attachment": {
-                                "type": "template",
-                                "payload": {
-                                    "template_type":"generic",
-                                    "elements":[
-                                        {
-                                            "title":"Poster",
-                                            "image_url":"https://smushy.de/kingpin/pressebild.png",
-                                            "subtitle":"90x60cm Poster",
-                                            "default_action": {
-                                                "type": "web_url",
-                                                "url": "https://smushy.de/kingpin/pressebild.png",
-                                                "messenger_extensions": false,
-                                                "webview_height_ratio": "tall"
-                                            },
-                                            "buttons":[
-                                                {
-                                                    "type": "postback",
-                                                    "title": "Anfragen",
-                                                    "payload": "kaufen"
-
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "title":"Poster",
-                                            "image_url":"https://smushy.de/kingpin/pressebild.png",
-                                            "subtitle":"90x60cm Poster",
-                                            "default_action": {
-                                                "type": "web_url",
-                                                "url": "https://smushy.de/kingpin/pressebild.png",
-                                                "messenger_extensions": false,
-                                                "webview_height_ratio": "tall"
-                                            },
-                                            "buttons":[
-                                                {
-                                                    "type": "postback",
-                                                    "title": "Anfragen",
-                                                    "payload": "kaufen"
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "title":"Poster",
-                                            "image_url":"https://smushy.de/kingpin/pressebild.png",
-                                            "subtitle":"90x60cm Poster",
-                                            "default_action": {
-                                                "type": "web_url",
-                                                "url": "https://smushy.de/kingpin/pressebild.png",
-                                                "messenger_extensions": false,
-                                                "webview_height_ratio": "tall"
-                                            },
-                                            "buttons":[
-                                                {
-                                                    "type": "postback",
-                                                    "title": "Anfragen",
-                                                    "payload": "kaufen"
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            }
-                        };
+                        response = require("./messages/merch");
                         break;
                     case "gigs":
                     case "konzerte":
                     case "veranstaltungen":
-                        response = {
-                            "attachment":{
-                                "type":"template",
-                                "payload":{
-                                    "template_type":"list",
-                                    "top_element_style":"large",
-                                    "elements":[
-                                        {
-                                            "title":"Lager Rock",
-                                            "image_url":"https://smushy.de/kingpin/gigs/pics/lagerrock.jpg",
-                                            "subtitle":"21.04.2018 in Borken",
-                                            "buttons":[
-                                                {
-                                                    "type":"web_url",
-                                                    "url":"https://www.facebook.com/LagerRock/",
-                                                    "title":"Zeig her"
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "title":"Album Aufnahme",
-                                            "image_url":"https://smushy.de/kingpin/pressebild.png",
-                                            "subtitle":"Wir nehmen gerade unser Album auf!",
-                                            "buttons":[
-                                                {
-                                                    "type":"web_url",
-                                                    "url":"https://www.facebook.com/dieletztebandderstadt/",
-                                                    "title":"Zeig her"
-                                                }
-                                            ]
-                                        },
-                                    ]
-                                }
-                            }
-                        };
+                        response = require("./messages/gigs");
                         break;
                     case "veranstalter":
-                        response = {
-                            "attachment": {
-                                "type": "template",
-                                "payload": {
-                                    "template_type": "button",
-                                    "text": "Vielen Dank für dein Interesse an unserer Band, "+name+".\nUm mehr zu hören, " +
-                                    "schau doch einfach bei YouTube oder Spotify rein." +
-                                    "\n\nDu kannst uns natürlich auch direkt anrufen und mit Keyboarder Alex alles besprechen.",
-                                    "buttons": [
-                                        {
-                                            "type": "web_url",
-                                            "title": "YouTube",
-                                            "url": "https://www.youtube.com/user/BandKingPin",
-                                        },
-                                        {
-                                            "type": "web_url",
-                                            "title": "Spotify",
-                                            "url": "https://open.spotify.com/artist/065dEH9ZT83Eg9YVdT91lS?si=lS4E0bnATiWVLMlB_oYbzw",
-                                        },
-                                        {
-                                            "type": "phone_number",
-                                            "title": "Anrufen",
-                                            "payload": "+4915142326427",
-                                        }
-                                    ]
-                                }
-                            }
-                        };
+                        const Orga = require("./messages/organizers");
+                        var organizers = new Orga(name);
+                        response = organizers.response;
                         break;
                     default:
                         if (first){
@@ -310,32 +194,8 @@ function handleMessage(sender_psid, received_message) {
                 }
             }
         } else if (received_message.attachments) {
-            // Get the URL of the message attachment
-            let attachment_url = received_message.attachments[0].payload.url;
             response = {
-                "attachment": {
-                    "type": "template",
-                    "payload": {
-                        "template_type": "generic",
-                        "elements": [{
-                            "title": "Ist das Bild richtig?",
-                            "subtitle": "Klick auf einen Button, um zu antworten",
-                            "image_url": attachment_url,
-                            "buttons": [
-                                {
-                                    "type": "postback",
-                                    "title": "Ja!",
-                                    "payload": "yes",
-                                },
-                                {
-                                    "type": "postback",
-                                    "title": "Nein!",
-                                    "payload": "no",
-                                }
-                            ],
-                        }]
-                    }
-                }
+                "text": "Vielen Dank für das Bild " + name
             }
         }
 
@@ -359,56 +219,32 @@ function handlePostback(sender_psid, received_postback) {
         first = true;
         response = { "text": "Okay! Dann sind wir hier fertig. Ich wünsch dir noch einen schönen Tag." }
     } else if (payload === 'fan') {
-        response = {
-            "attachment": {
-                "type": "template",
-                "payload": {
-                    "template_type": "button",
-                    "text": "Vielleicht kann ich dir bis dahin ein bisschen weiterhelfen." +
-                    "\nSchreib einfach 'merchandise, merch oder fanartikel', um mehr über unsere Produkte zu erfahren.\nWenn du Infos über die nächsten " +
-                    "Konzerte bekommen möchtest, dann screib einfach 'gigs, konzerte oder veranstaltungen'.\n\nIch hab dir unten mal den Link zu unserer Spotify Seite eingefügt. Gruß Alex!",
-                    "buttons": [
-                        {
-                            "type": "web_url",
-                            "title": "Spotify",
-                            "url": "https://open.spotify.com/artist/065dEH9ZT83Eg9YVdT91lS?si=lS4E0bnATiWVLMlB_oYbzw",
-                        }
-                    ]
-                }
-            }
-        };
+        response = require("./messages/postbacks/fan");
     } else if (payload === 'veranstalter') {
+        response = require("./messages/postbacks/veranstalter");
+    } else if (payload === "tshirt"){
+
+        mail("T-Shirt", sender_psid);
         response = {
-            "attachment": {
-                "type": "template",
-                "payload": {
-                    "template_type": "button",
-                    "text": "Vielen Dank für dein Interesse an unserer Band.\nUm mehr zu hören, " +
-                    "schau doch einfach bei YouTube oder Spotify rein." +
-                    "\n\nDu kannst uns natürlich auch direkt anrufen und mit Keyboarder Alex alles besprechen.",
-                    "buttons": [
-                        {
-                            "type": "web_url",
-                            "title": "YouTube",
-                            "url": "https://www.youtube.com/user/BandKingPin",
-                        },
-                        {
-                            "type": "web_url",
-                            "title": "Spotify",
-                            "url": "https://open.spotify.com/artist/065dEH9ZT83Eg9YVdT91lS?si=lS4E0bnATiWVLMlB_oYbzw",
-                        },
-                        {
-                            "type": "phone_number",
-                            "title": "Anrufen",
-                            "payload": "+4915142326427",
-                        }
-                    ]
-                }
-            }
-        };
-    } else if (payload === "kaufen"){
+            "text": "Wir freuen uns über dein Interesse an unseren T-Shirts. Ich habe dein Interesse vermerkt und werde mich schnellstmöglich bei dir melden! Gruß Alex"
+        }
+    }else if (payload === "beutel"){
+
+        mail("Kingpin Beutel", sender_psid);
         response = {
-            "text": "Wir freuen uns über dein Interesse an unserem Merch. Ich habe dein Interesse vermerkt und werde mich schnellstmöglich bei dir melden! Gruß Alex"
+            "text": "Wir freuen uns über dein Interesse an unserem Beutel. Ich habe dein Interesse vermerkt und werde mich schnellstmöglich bei dir melden! Gruß Alex"
+        }
+    }else if (payload === "set"){
+
+        mail("Kingpin Merch Set", sender_psid);
+        response = {
+            "text": "Wir freuen uns über dein Interesse an unserem Merchandise Set. Ich habe dein Interesse vermerkt und werde mich schnellstmöglich bei dir melden! Gruß Alex"
+        }
+    }else if (payload === "poster"){
+
+        mail("Kingpin  Postser", sender_psid);
+        response = {
+            "text": "Wir freuen uns über dein Interesse an unseren Postern. Ich habe dein Interesse vermerkt und werde mich schnellstmöglich bei dir melden! Gruß Alex"
         }
     }
 
@@ -438,5 +274,43 @@ function callSendAPI(sender_psid, response) {
         } else {
             console.error("Unable to send message:" + err);
         }
+    });
+}
+
+function mail(artikel, sender_psid) {
+    request('https://graph.facebook.com/v2.6/'+sender_psid+'?fields=first_name,last_name&access_token='+PAGE_ACCESS_TOKEN, { json: true }, (err, res, body) => {
+        if (err) {
+            return console.log(err);
+        }
+
+        var name;
+        var nachname;
+        if (body !== undefined) {
+            name = body["first_name"];
+            nachname = body["last_name"];
+
+        } else {
+            name = ""
+            nachname = ""
+        }
+
+        // setup email data with unicode symbols
+        let mailOptions = {
+            from: "'Facebook Nutzer' <"+Globals.MAIL+">", // sender address
+            to: Globals.MAIL_TO, // list of receivers
+            subject: 'Merch Anfrage von ' + name + ' ' + nachname, // Subject line
+            text: 'Hallo Kingpin,\n\nDer Facebook Nutzer '+ name + ' ' + nachname + ' ist an folgendem Merchandise Artikel interessiert:\n' + artikel, // plain text body
+        };
+
+        // send mail with defined transport object
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return console.log(error);
+            }
+            console.log('Message sent: %s', info.messageId);
+            // Preview only available when sending through an Ethereal accountconsole.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+
+        });
+
     });
 }
